@@ -1,28 +1,44 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import GooglePlacesTextInput from "react-native-google-places-textinput";
+
 import MapView from "react-native-maps";
 import { RadioGroup } from "react-native-radio-buttons-group";
-
 const SearchTab = () => {
+  const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAP_API_KEY ?? "";
+
   const [loading, setLoading] = useState(false);
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [travelMode, setTravelMode] = useState("driving");
 
-  const radioButtons = [
-    { id: "1", label: "Walk", value: "walking" },
-    { id: "2", label: "Cycle", value: "bicycling" },
-    { id: "3", label: "Drive", value: "driving" },
-    { id: "4", label: "Transit", value: "transit" },
-  ];
+  // Define the type for place details (adjust fields as needed)
+  type PlaceDetailsFields = {
+    location?: { lat: number; lng: number };
+    [key: string]: any;
+  };
+
+  const [originFullDetails, setOriginFullDetails] =
+    useState<PlaceDetailsFields | null>(null);
+  const [destinationFullDetails, setDestinationFullDetails] =
+    useState<PlaceDetailsFields | null>(null);
+
+  const radioButtons = useMemo(
+    () => [
+      { id: "1", label: "Walk", value: "walking" },
+      { id: "2", label: "Cycle", value: "bicycling" },
+      { id: "3", label: "Drive", value: "driving" },
+      { id: "4", label: "Transit", value: "transit" },
+    ],
+    []
+  );
 
   const handleSearch = () => {
     setLoading(true);
@@ -30,39 +46,83 @@ const SearchTab = () => {
       setLoading(false);
       Alert.alert("Searching shortest route...");
     }, 1500);
+    console.log("Origin:", originFullDetails);
+    console.log("Destination:", destinationFullDetails); // Log full details for debugging
+    console.log("Travel Mode:", travelMode);
   };
 
   const handleClear = () => {
     setOrigin("");
     setDestination("");
-    setTravelMode("driving");
+    setTravelMode("");
+  };
+
+  //Input styles
+  const inputStyles = {
+    height: 45,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    fontSize: 16,
+    backgroundColor: "#f9f9f9",
   };
 
   return (
     <View style={styles.container}>
       {/* Form Section */}
       <View style={styles.card}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter origin"
+        {/* Origin Input */}
+        <GooglePlacesTextInput
+          apiKey={GOOGLE_API_KEY}
+          placeHolderText="Enter Origin"
           value={origin}
-          onChangeText={setOrigin}
+          fetchDetails={true} // Fetch detailed place info
+          detailsFields={["location"]} // for later use to capture coordinates
+          detailsProxyUrl={null} // Use default proxy
+          onPlaceSelect={(place) => {
+            setOrigin(place?.structuredFormat?.mainText?.text || "");
+            setOriginFullDetails(place.details || null); // Store full details
+          }}
+          onTextChange={(text) => {
+            setOrigin(text);
+            setOriginFullDetails(null);
+          }}
+          style={{
+            input: inputStyles,
+          }}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter destination"
+        {/* Destination Input */}
+        <GooglePlacesTextInput
+          apiKey={GOOGLE_API_KEY}
+          placeHolderText="Enter Destination"
           value={destination}
-          onChangeText={setDestination}
+          fetchDetails={true} // Fetch detailed place info
+          detailsFields={["location"]} // for later use to capture coordinates
+          detailsProxyUrl={null} // Use default proxy
+          onPlaceSelect={(place) => {
+            setDestination(place?.structuredFormat?.mainText?.text || "");
+            setDestinationFullDetails(place.details || null); // Store full details
+          }}
+          onTextChange={(text) => {
+            setDestination(text);
+            setDestinationFullDetails(null);
+          }}
+          style={{
+            input: inputStyles,
+          }}
         />
 
         {/* Travel Mode Selector */}
         <Text style={styles.label}>Select Travel Mode:</Text>
         <RadioGroup
           radioButtons={radioButtons}
-          onPress={(selectedValue) => {
-            setTravelMode(selectedValue || "driving");
+          onPress={(selectedId) => {
+            const selected = radioButtons.find((rb) => rb.id === selectedId);
+            setTravelMode(selected?.value || "transit");
           }}
-          selectedId={radioButtons.find((b) => b.value === travelMode)?.id}
+          selectedId={radioButtons.find((rb) => rb.value === travelMode)?.id}
           layout="row"
           containerStyle={{ marginVertical: 10 }}
         />
@@ -115,17 +175,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
     elevation: 4,
-  },
-
-  input: {
-    height: 45,
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    fontSize: 16,
-    backgroundColor: "#f9f9f9",
   },
 
   label: {

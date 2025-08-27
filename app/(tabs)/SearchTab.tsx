@@ -8,8 +8,7 @@ import {
   View,
 } from "react-native";
 import GooglePlacesTextInput from "react-native-google-places-textinput";
-
-import MapView from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { RadioGroup } from "react-native-radio-buttons-group";
 const SearchTab = () => {
   const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAP_API_KEY ?? "";
@@ -67,6 +66,10 @@ const SearchTab = () => {
     marginBottom: 12,
     fontSize: 16,
     backgroundColor: "#f9f9f9",
+  };
+
+  const onMapReady = () => {
+    console.log("Map is ready");
   };
 
   return (
@@ -146,15 +149,27 @@ const SearchTab = () => {
       </View>
 
       {/* Map Section */}
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: 37.78825,
-          longitude: -122.4324,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
-      />
+      <View style={styles.mapContainer}>
+        <MapView
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          initialRegion={{
+            latitude: 37.78825,
+            longitude: -122.4324,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        >
+          <Marker
+            coordinate={{
+              latitude: 37.78825,
+              longitude: -122.4324,
+            }}
+            title="Marker Title"
+            description="Marker Description"
+          />
+        </MapView>
+      </View>
     </View>
   );
 };
@@ -219,12 +234,27 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
+  mapContainer: {
+    flex: 1,
+    margin: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 4,
+    backgroundColor: "#aa1b1bff",
+  },
 
   map: {
     flex: 1,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     overflow: "hidden",
+    height: 200,
+    width: '100%',
+    zIndex: 1,
   },
 });
 

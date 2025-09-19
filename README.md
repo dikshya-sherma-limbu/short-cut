@@ -38,6 +38,6 @@ Clone the repo and run:
 git clone https://github.com/my-username/short-cut.git
 cd short-cut
 npm install
-npx expo start
+npx expo run:android
 
 ```

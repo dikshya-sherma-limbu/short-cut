@@ -154,16 +154,16 @@ const SearchTab = () => {
           style={styles.map}
           provider={PROVIDER_GOOGLE}
           initialRegion={{
-            latitude: 37.78825,
-            longitude: -122.4324,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
+            latitude: 43.6532,
+longitude: -79.3832,
+latitudeDelta: 0.0922,
+longitudeDelta: 0.0421,
           }}
         >
           <Marker
             coordinate={{
-              latitude: 37.78825,
-              longitude: -122.4324,
+              latitude: 43.6532,
+              longitude: -79.3832,
             }}
             title="Marker Title"
             description="Marker Description"

@@ -10,6 +10,8 @@ import {
 import GooglePlacesTextInput from "react-native-google-places-textinput";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { RadioGroup } from "react-native-radio-buttons-group";
+import { getShortestPath } from "../../services/graphService";
+
 const SearchTab = () => {
   const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAP_API_KEY ?? "";
 
@@ -39,16 +41,49 @@ const SearchTab = () => {
     []
   );
 
-  const handleSearch = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert("Searching shortest route...");
-    }, 1500);
-    console.log("Origin:", originFullDetails);
-    console.log("Destination:", destinationFullDetails); // Log full details for debugging
-    console.log("Travel Mode:", travelMode);
+ const handleSearch = async () => {
+  if (!originFullDetails || !destinationFullDetails) {
+    Alert.alert("Please select both origin and destination");
+    return;
+  }
+
+  const originPayload = {
+    location: {
+      latitude: originFullDetails.location?.lat,
+      longitude: originFullDetails.location?.lng,
+    },
   };
+
+  const destinationPayload = {
+    location: {
+      latitude: destinationFullDetails.location?.lat,
+      longitude: destinationFullDetails.location?.lng,
+    },
+  };
+  // console.log("Origin Payload:", originPayload);
+  // console.log("Destination Payload:", destinationPayload);
+  // console.log("Travel Mode:", travelMode);
+  console.log("Origin Full Details:", originFullDetails);
+  console.log("Destination Full Details:", destinationFullDetails);
+
+  try {
+    setLoading(true);
+
+    const result = await getShortestPath(
+    originFullDetails,
+    destinationFullDetails,
+      travelMode
+    );
+
+    console.log("Shortest route result:", result);
+    Alert.alert("Route fetched successfully");
+  } catch (err) {
+    console.error("Error fetching route:", err);
+    Alert.alert("Failed to fetch route");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleClear = () => {
     setOrigin("");
@@ -155,9 +190,9 @@ const SearchTab = () => {
           provider={PROVIDER_GOOGLE}
           initialRegion={{
             latitude: 43.6532,
-longitude: -79.3832,
-latitudeDelta: 0.0922,
-longitudeDelta: 0.0421,
+            longitude: -79.3832,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
           }}
         >
           <Marker

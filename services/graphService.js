@@ -19,12 +19,17 @@ export const getShortestPath = async (origin, destination, travelMode) => {
         },
       },
     );
-    return response.data;
+    console.log(
+      "Received response from shortest path API:",
+      JSON.stringify(response.data),
+    );
+    const result = JSON.stringify(response.data); // Convert to string here
+    return result;
   } catch (error) {
     console.error(
       "Error fetching shortest path:",
       error,
-      error.response?.data,
+      JSON.stringify(error.response?.data),
       error.message,
       error.axiosError,
     );

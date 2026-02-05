@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import GooglePlacesTextInput from "react-native-google-places-textinput";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { RadioGroup } from "react-native-radio-buttons-group";
 import { getShortestPath } from "../../services/graphService";
 
@@ -19,6 +19,9 @@ const SearchTab = () => {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [travelMode, setTravelMode] = useState("driving");
+  const [routeCoords, setRouteCoords] = useState<
+    Array<{ latitude: number; longitude: number }>
+  >([]); // For storing route coordinates
 
   // Define the type for place details (adjust fields as needed)
   type PlaceDetailsFields = {
@@ -38,52 +41,65 @@ const SearchTab = () => {
       { id: "3", label: "Drive", value: "driving" },
       { id: "4", label: "Transit", value: "transit" },
     ],
-    []
+    [],
   );
 
- const handleSearch = async () => {
-  if (!originFullDetails || !destinationFullDetails) {
-    Alert.alert("Please select both origin and destination");
-    return;
-  }
+  const handleSearch = async () => {
+    if (!originFullDetails || !destinationFullDetails) {
+      Alert.alert("Please select both origin and destination");
+      return;
+    }
 
-  const originPayload = {
-    location: {
-      latitude: originFullDetails.location?.lat,
-      longitude: originFullDetails.location?.lng,
-    },
+    const originPayload = {
+      location: {
+        latitude: originFullDetails.location?.lat,
+        longitude: originFullDetails.location?.lng,
+      },
+    };
+
+    const destinationPayload = {
+      location: {
+        latitude: destinationFullDetails.location?.lat,
+        longitude: destinationFullDetails.location?.lng,
+      },
+    };
+    // console.log("Origin Payload:", originPayload);
+    // console.log("Destination Payload:", destinationPayload);
+    // console.log("Travel Mode:", travelMode);
+    console.log("Origin Full Details:", originFullDetails);
+    console.log("Destination Full Details:", destinationFullDetails);
+
+    try {
+      setLoading(true);
+
+      const result = await getShortestPath(
+        originFullDetails,
+        destinationFullDetails,
+        travelMode,
+      );
+      console.log("----------------");
+
+      // create polyline from result
+      const parsedResult =
+        typeof result === "string" ? JSON.parse(result) : result; // if result is string, parse it or use as is
+
+      // Extract coordinates from the parsed result and set to state for polyline
+      const coords = parsedResult.path.path.map((p: any) => ({
+        latitude: p.lat,
+        longitude: p.lon,
+      }));
+
+      // Set the route coordinates for polyline
+      setRouteCoords(coords);
+
+      Alert.alert("Route fetched successfully");
+    } catch (err) {
+      console.error("Error fetching route:", err);
+      Alert.alert("Failed to fetch route");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const destinationPayload = {
-    location: {
-      latitude: destinationFullDetails.location?.lat,
-      longitude: destinationFullDetails.location?.lng,
-    },
-  };
-  // console.log("Origin Payload:", originPayload);
-  // console.log("Destination Payload:", destinationPayload);
-  // console.log("Travel Mode:", travelMode);
-  console.log("Origin Full Details:", originFullDetails);
-  console.log("Destination Full Details:", destinationFullDetails);
-
-  try {
-    setLoading(true);
-
-    const result = await getShortestPath(
-    originFullDetails,
-    destinationFullDetails,
-      travelMode
-    );
-
-    console.log("Shortest route result:", result);
-    Alert.alert("Route fetched successfully");
-  } catch (err) {
-    console.error("Error fetching route:", err);
-    Alert.alert("Failed to fetch route");
-  } finally {
-    setLoading(false);
-  }
-};
 
   const handleClear = () => {
     setOrigin("");
@@ -101,10 +117,6 @@ const SearchTab = () => {
     marginBottom: 12,
     fontSize: 16,
     backgroundColor: "#f9f9f9",
-  };
-
-  const onMapReady = () => {
-    console.log("Map is ready");
   };
 
   return (
@@ -195,14 +207,22 @@ const SearchTab = () => {
             longitudeDelta: 0.0421,
           }}
         >
-          <Marker
+          {/* <Marker
             coordinate={{
               latitude: 43.6532,
               longitude: -79.3832,
             }}
             title="Marker Title"
             description="Marker Description"
-          />
+          /> */}
+          {/* Add red polyline for the route here when you have the route data from soure to destination */}
+          {routeCoords.length > 0 && (
+            <Polyline
+              coordinates={routeCoords}
+              strokeWidth={3}
+              strokeColor="blue"
+            />
+          )}
         </MapView>
       </View>
     </View>
@@ -288,7 +308,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     overflow: "hidden",
     height: 200,
-    width: '100%',
+    width: "100%",
     zIndex: 1,
   },
 });
